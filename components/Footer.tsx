@@ -16,11 +16,11 @@ const Footer = () => {
                 <ZapIcon className="w-4 h-4 text-primary" />
               </div>
               <span className="text-xl font-bold font-mono">
-                endura<span className="text-primary">bot</span>.ai
+                bite<span className="text-primary">lift</span>.ai
               </span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} endurabot.ai - All rights reserved
+              © {new Date().getFullYear()} bitelift.ai - All rights reserved
             </p>
           </div>
 
