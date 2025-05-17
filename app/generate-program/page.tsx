@@ -1,4 +1,5 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { vapi } from "@/lib/vapi";
@@ -18,6 +19,30 @@ const GenerateProgramPage = () => {
 
   const messageContainerRef = useRef<HTMLDivElement>(null);
 
+  // SOLUTION to get rid of "Meeting has ended" error
+  useEffect(() => {
+    const originalError = console.error;
+    // override console.error to ignore "Meeting has ended" errors
+    console.error = function (msg, ...args) {
+      if (
+        msg &&
+        (msg.includes("Meeting has ended") ||
+          (args[0] && args[0].toString().includes("Meeting has ended")))
+      ) {
+        console.log("Ignoring known error: Meeting has ended");
+        return; // don't pass to original handler
+      }
+
+      // pass all other errors to the original handler
+      return originalError.call(console, msg, ...args);
+    };
+
+    // restore original handler on unmount
+    return () => {
+      console.error = originalError;
+    };
+  }, []);
+
   // auto-scroll messages
   useEffect(() => {
     if (messageContainerRef.current) {
@@ -26,7 +51,7 @@ const GenerateProgramPage = () => {
     }
   }, [messages]);
 
-  //Navigate the user to profile page after the call ends
+  // navigate user to profile page after the call ends
   useEffect(() => {
     if (callEnded) {
       const redirectTimer = setTimeout(() => {
@@ -37,7 +62,7 @@ const GenerateProgramPage = () => {
     }
   }, [callEnded, router]);
 
-  // Set up event listeners for vapi
+  // setup event listeners for vapi
   useEffect(() => {
     const handleCallStart = () => {
       console.log("Call started");
@@ -55,24 +80,22 @@ const GenerateProgramPage = () => {
     };
 
     const handleSpeechStart = () => {
-      console.log("AI Speech started");
+      console.log("AI started Speaking");
       setIsSpeaking(true);
     };
 
     const handleSpeechEnd = () => {
-      console.log("AI Speech ended");
+      console.log("AI stopped Speaking");
       setIsSpeaking(false);
     };
-
-    const handleCallMessage = (message: any) => {
-      if (message.type === "transcript" && message.transcript === "final") {
-        const newMessage = {
-          content: message.transcript,
-          role: message.role,
-        };
+    const handleMessage = (message: any) => {
+      console.log("Message received:", message);
+      if (message.type === "transcript" && message.transcriptType === "final") {
+        const newMessage = { content: message.transcript, role: message.role };
         setMessages((prev) => [...prev, newMessage]);
       }
     };
+
     const handleError = (error: any) => {
       console.log("Vapi Error", error);
       setConnecting(false);
@@ -84,17 +107,17 @@ const GenerateProgramPage = () => {
       .on("call-end", handleCallEnd)
       .on("speech-start", handleSpeechStart)
       .on("speech-end", handleSpeechEnd)
-      .on("message", handleCallMessage)
+      .on("message", handleMessage)
       .on("error", handleError);
 
-    // Cleanup event listeners on unmount
+    // cleanup event listeners on unmount
     return () => {
       vapi
         .off("call-start", handleCallStart)
         .off("call-end", handleCallEnd)
         .off("speech-start", handleSpeechStart)
         .off("speech-end", handleSpeechEnd)
-        .off("message", handleCallMessage)
+        .off("message", handleMessage)
         .off("error", handleError);
     };
   }, []);
@@ -114,18 +137,20 @@ const GenerateProgramPage = () => {
         await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
           variableValues: {
             full_name: fullName,
+            user_id: user?.id,
           },
-          clientMessages: [],
-          serverMessages: [],
+          clientMessages: ["transcript"],
+          serverMessages: ["transcript"],
         });
       } catch (error) {
         console.log("Failed to start call", error);
+        setConnecting(false);
       }
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen text-foreground overflow-hidden pb-6 pt-16">
+    <div className="flex flex-col min-h-screen text-foreground overflow-hidden  pb-6 pt-24">
       <div className="container mx-auto px-4 h-full max-w-5xl">
         {/* Title */}
         <div className="text-center mb-8">
@@ -138,9 +163,10 @@ const GenerateProgramPage = () => {
             personalized plan
           </p>
         </div>
+
         {/* VIDEO CALL AREA */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* AI VIDEO ASSISTANT */}
+          {/* AI ASSISTANT CARD */}
           <Card className="bg-card/90 backdrop-blur-sm border border-border overflow-hidden relative">
             <div className="aspect-video flex flex-col items-center justify-center p-6 relative">
               {/* AI VOICE ANIMATION */}
@@ -167,8 +193,9 @@ const GenerateProgramPage = () => {
                   ))}
                 </div>
               </div>
+
               {/* AI IMAGE */}
-              <div className="relative size-32">
+              <div className="relative size-32 mb-4">
                 <div
                   className={`absolute inset-0 bg-primary opacity-10 rounded-full blur-lg ${
                     isSpeaking ? "animate-pulse" : ""
@@ -191,6 +218,7 @@ const GenerateProgramPage = () => {
               </p>
 
               {/* SPEAKING INDICATOR */}
+
               <div
                 className={`mt-4 flex items-center gap-2 px-3 py-1 rounded-full bg-card border border-border ${
                   isSpeaking ? "border-primary" : ""
@@ -247,8 +275,8 @@ const GenerateProgramPage = () => {
             </div>
           </Card>
         </div>
-        {/* MESSAGE COINTER  */}
 
+        {/* MESSAGE COINTER  */}
         {messages.length > 0 && (
           <div
             ref={messageContainerRef}
@@ -258,17 +286,28 @@ const GenerateProgramPage = () => {
               {messages.map((msg, index) => (
                 <div key={index} className="message-item animate-fadeIn">
                   <div className="font-semibold text-xs text-muted-foreground mb-1">
-                    {msg.role === "assistant" ? "CodeFlex AI" : "You"}:
+                    {msg.role === "assistant" ? "BiteLift AI" : "You"}:
                   </div>
                   <p className="text-foreground">{msg.content}</p>
                 </div>
               ))}
+
+              {callEnded && (
+                <div className="message-item animate-fadeIn">
+                  <div className="font-semibold text-xs text-primary mb-1">
+                    System:
+                  </div>
+                  <p className="text-foreground">
+                    Your fitness program has been created! Redirecting to your
+                    profile...
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {/* CALL CONTROLS */}
-
         <div className="w-full flex justify-center gap-4">
           <Button
             className={`w-40 text-xl rounded-3xl ${
@@ -300,5 +339,4 @@ const GenerateProgramPage = () => {
     </div>
   );
 };
-
 export default GenerateProgramPage;
