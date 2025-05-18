@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { vapi } from "@/lib/vapi";
 import { useUser } from "@clerk/nextjs";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -204,10 +205,12 @@ const GenerateProgramPage = () => {
 
                 <div className="relative w-full h-full rounded-full bg-card flex items-center justify-center border border-border overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-secondary/10"></div>
-                  <img
-                    src="/ai-avatar1.png"
+                  <Image
+                    src="/ai-avatar-4.png"
                     alt="AI Assistant"
                     className="w-full h-full object-cover"
+                    width={1024}
+                    height={1024}
                   />
                 </div>
               </div>
