@@ -29,7 +29,6 @@ const GenerateProgramPage = () => {
         (msg.includes("Meeting has ended") ||
           (args[0] && args[0].toString().includes("Meeting has ended")))
       ) {
-        console.log("Ignoring known error: Meeting has ended");
         return; // don't pass to original handler
       }
 
@@ -80,16 +79,13 @@ const GenerateProgramPage = () => {
     };
 
     const handleSpeechStart = () => {
-      console.log("AI started Speaking");
       setIsSpeaking(true);
     };
 
     const handleSpeechEnd = () => {
-      console.log("AI stopped Speaking");
       setIsSpeaking(false);
     };
     const handleMessage = (message: any) => {
-      console.log("Message received:", message);
       if (message.type === "transcript" && message.transcriptType === "final") {
         const newMessage = { content: message.transcript, role: message.role };
         setMessages((prev) => [...prev, newMessage]);
