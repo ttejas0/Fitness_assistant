@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 export const createPlan = mutation({
@@ -45,5 +45,18 @@ export const createPlan = mutation({
     const planId = await ctx.db.insert("plans", args);
 
     return planId;
+  },
+});
+
+export const getUserPlans = query({
+  args: { userId: v.string() },
+  handler: async (ctx, args) => {
+    const plans = await ctx.db
+      .query("plans")
+      .withIndex("by_user_id", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .collect();
+
+    return plans;
   },
 });
