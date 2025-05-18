@@ -64,14 +64,12 @@ const GenerateProgramPage = () => {
   // setup event listeners for vapi
   useEffect(() => {
     const handleCallStart = () => {
-      console.log("Call started");
       setConnecting(false);
       setCallActive(true);
       setCallEnded(false);
     };
 
     const handleCallEnd = () => {
-      console.log("Call ended");
       setCallActive(false);
       setConnecting(false);
       setIsSpeaking(false);
